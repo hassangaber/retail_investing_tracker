@@ -109,55 +109,79 @@ public:
     }
     
     void generate_report() {
-        for (auto& pos : positions) {
-            fetch_historical_data(pos.ticker, pos.purchase_date);
-            long purchase_ts = convert_date_to_timestamp(pos.purchase_date);
-            pos.purchase_price = get_price_on_date(pos.ticker, purchase_ts);
-            //std::this_thread::sleep_for(std::chrono::seconds(1));
-        }
-        
-        double total_investment = 0;
-        double current_value = 0;
-        
-        std::cout << "\n=== Portfolio Report ===\n\n";
-        std::cout << std::setw(10) << "Ticker" 
-                  << std::setw(15) << "Buy Date"
-                  << std::setw(15) << "Buy Price"
-                  << std::setw(10) << "Volume"
-                  << std::setw(15) << "Book Value"
-                  << std::setw(15) << "Curr Price"
-                  << std::setw(15) << "Mkt Value"
-                  << std::setw(15) << "Return %\n";
-        
-        for (const auto& pos : positions) {
-            const auto& prices = historical_prices[pos.ticker];
-            if (prices.empty()) continue;
-            
-            double current_price = prices.back().second;
-            double book_value = pos.purchase_price * pos.volume;
-            double market_value = current_price * pos.volume;
-            double pos_return = (current_price - pos.purchase_price) / pos.purchase_price * 100;
-            
-            total_investment += book_value;
-            current_value += market_value;
-            
-            std::cout << std::setw(10) << pos.ticker 
-                      << std::setw(15) << pos.purchase_date
-                      << std::setw(15) << std::fixed << std::setprecision(2) << pos.purchase_price
-                      << std::setw(15) << pos.volume
-                      << std::setw(15) << book_value
-                      << std::setw(15) << current_price
-                      << std::setw(15) << market_value
-                      << std::setw(15) << pos_return << "%\n";
-        }
-        
-        double total_return = (current_value - total_investment) / total_investment * 100;
-        
-        std::cout << "\nPortfolio Summary:\n";
-        std::cout << "Total Book Value: $" << std::fixed << std::setprecision(2) << total_investment << "\n";
-        std::cout << "Total Market Value: $" << current_value << "\n";
-        std::cout << "Total Return: " << total_return << "%\n";
-    }
+      // Define the aggregation struct
+      struct AggregatedPosition {
+          double total_volume = 0;
+          double weighted_cost_basis = 0;
+          double total_book_value = 0;
+      };
+      
+      // Create the map using the defined struct
+      std::map<std::string, AggregatedPosition> aggregated;
+      
+      // First fetch all historical data
+      for (auto& pos : positions) {
+          fetch_historical_data(pos.ticker, pos.purchase_date);
+          long purchase_ts = convert_date_to_timestamp(pos.purchase_date);
+          pos.purchase_price = get_price_on_date(pos.ticker, purchase_ts);
+      }
+      
+      // First pass: aggregate positions
+      for (const auto& pos : positions) {
+          const auto& prices = historical_prices[pos.ticker];
+          if (prices.empty()) continue;
+          
+          double book_value = pos.purchase_price * pos.volume;
+          auto& agg = aggregated[pos.ticker];
+          
+          // Update aggregated values
+          agg.total_book_value += book_value;
+          agg.total_volume += pos.volume;
+          agg.weighted_cost_basis = agg.total_book_value / agg.total_volume;
+      }
+      
+      double total_investment = 0;
+      double current_value = 0;
+      
+      // Print aggregated holdings
+      std::cout << "Current Holdings:\n";
+      for (const auto& [ticker, agg] : aggregated) {
+          const auto& prices = historical_prices[ticker];
+          if (prices.empty()) continue;
+          
+          double current_price = prices.back().second;
+          double holding_value = current_price * agg.total_volume;
+          current_value += holding_value;
+          total_investment += agg.total_book_value;
+          
+          double position_return = (current_price - agg.weighted_cost_basis) / agg.weighted_cost_basis * 100;
+          
+          std::cout << ticker 
+                    << ": $" << std::fixed << std::setprecision(2) << holding_value 
+                    << " | Shares: " << agg.total_volume
+                    << " | Return: " << std::setprecision(2) << position_return << "%\n";
+      }
+      
+      // Calculate and print portfolio totals
+      double total_return = (current_value - total_investment) / total_investment * 100;
+      
+      // Now calculate percentage of portfolio for each holding
+      std::cout << "\nPortfolio Weights:\n";
+      for (const auto& [ticker, agg] : aggregated) {
+          const auto& prices = historical_prices[ticker];
+          if (prices.empty()) continue;
+          
+          double current_price = prices.back().second;
+          double holding_value = current_price * agg.total_volume;
+          double portfolio_weight = (holding_value / current_value) * 100;
+          
+          std::cout << ticker << ": " << std::setprecision(1) << portfolio_weight << "%\n";
+      }
+      
+      std::cout << "\nTotal Portfolio Value: $" << std::fixed << std::setprecision(2) << current_value << "\n";
+      std::cout << "All-Time Return: " << std::setprecision(2) << total_return << "%\n";
+  }
+
 };
 
 void calculate_portfolio_value_USD() {
