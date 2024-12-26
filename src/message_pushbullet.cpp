@@ -161,7 +161,7 @@ void send_portfolio_notification(const std::string& api_key) {
 
 
 int main() {
-    const std::string API_KEY = "o.J58dAKJX7POU7wqCmmlIKgUzguYjIwKs";
+    const std::string API_KEY = "o.XXXXX";
     
     // This will both print to console and send to phone
     send_portfolio_notification(API_KEY);
