@@ -3,6 +3,7 @@
 #include <string>
 #include <sstream>
 #include <streambuf>
+#include <cstdlib>
 #include <nlohmann/json.hpp>
 
 
@@ -10,7 +11,7 @@ using json = nlohmann::json;
 
 extern void calculate_portfolio_value_USD();
 extern void calculate_portfolio_value_CAD();
-
+extern void set_env();
 
 class StreambufCapture : public std::streambuf {
     std::string captured;
@@ -161,10 +162,11 @@ void send_portfolio_notification(const std::string& api_key) {
 
 
 int main() {
-    const std::string API_KEY = "o.J58dAKJX7POU7wqCmmlIKgUzguYjIwKs";
-    
+    set_env();
+    const char* API_KEY = std::getenv("PUSHBULLET_API_KEY");
+    if(API_KEY){ 
     // This will both print to console and send to phone
-    send_portfolio_notification(API_KEY);
-    
+        send_portfolio_notification(API_KEY);
+    }
     return 0;
 }

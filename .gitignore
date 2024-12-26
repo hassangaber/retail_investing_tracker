@@ -1,3 +1,6 @@
+src/make_env.cpp
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
