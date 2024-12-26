@@ -1,3 +1,5 @@
+#include <thread>
+#include <chrono>
 #include <array>
 #include <string>
 #include <vector>
@@ -158,7 +160,7 @@ public:
     }
 };
 
-int main() {
+void calculate_portfolio_value_USD() {
     curl_global_init(CURL_GLOBAL_ALL);
     
     Portfolio portfolio;
@@ -169,12 +171,27 @@ int main() {
     portfolio.add_position("SPY", "2024-12-18", 1);
     portfolio.add_position("SPLG", "2024-12-9", 4);
     portfolio.add_position("SPLG", "2024-12-18", 0.708);
-    portfolio.add_position("HXQ", "2024-12-16", 3);
-    portfolio.add_position("HXQ", "2024-12-3", 2);
-    portfolio.add_position("HXQ", "2024-11-29", 3);
-    
+   
     portfolio.generate_report();
     
     curl_global_cleanup();
-    return 0;
+}
+
+void calculate_portfolio_value_CAD() {
+    curl_global_init(CURL_GLOBAL_ALL);
+    
+    Portfolio portfolio;
+    
+    portfolio.add_position("HXQ.TO", "2024-12-16", 3);
+    portfolio.add_position("HXQ.TO", "2024-12-3", 2);
+    portfolio.add_position("HXQ.TO", "2024-11-29", 3);
+    portfolio.add_position("XEQT.TO", "2024-11-20",1);
+    portfolio.add_position("XEQT.TO", "2024-11-29", 5);
+    portfolio.add_position("XEQT.TO", "2024-12-3", 2);
+    portfolio.add_position("XEQT.TO", "2024-12-11", 3);
+    portfolio.add_position("XEQT.TO", "2024-12-12", 1);
+    portfolio.add_position("XEQT.TO", "2024-12-16", 2);
+    portfolio.generate_report();
+    
+    curl_global_cleanup();
 }
